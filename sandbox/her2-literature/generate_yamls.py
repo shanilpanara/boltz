@@ -1,6 +1,6 @@
 from pathlib import Path
 
-
+TEMPLATE_PATH = Path.home() / "programs" / "boltz" / "sandbox" / "her2-literature" / "templates" / "P04626.pdb"
 
 TEMPLATE = """
 version: 1  # Optional, defaults to 1
@@ -14,7 +14,7 @@ sequences:
       sequence: {binder_seq}
       msa: empty
 templates:
-    - pdb: /home/shanil/programs/boltz/sandbox/her2-literature/templates/P04626.pdb
+    - pdb: {template_path}
 constraints:
   - pocket:
       binder: B
@@ -38,6 +38,7 @@ def generate_yamls(
         binder_seq=binder_seq,
         contacts=contacts_str,
         max_distance=max_distance,
+	template_path=str(TEMPLATE_PATH)
     )
     with open(output_file, "w") as f:
         f.write(data)
@@ -46,7 +47,7 @@ def generate_yamls(
 
 
 if __name__ == "__main__":
-    YAML_DIR = Path(".") / "yamls"
+    YAML_DIR = Path(".") / "yamls_v2"
     YAML_DIR.mkdir(parents=True, exist_ok=True)
 
     FILE_DIR = Path(__file__).parent
@@ -89,12 +90,16 @@ if __name__ == "__main__":
         "P023": "KEFPYLGWWNPNEYRYK",
         "P002": "KELTVSPWYK",
         "P003": "EKAAYSLGYYNPTK",
-        "P001": "CKEQDVNTAVAWK",
+        "P006": "KEQDVNTAVAWK",
     }
 
     for domain_name, pocket_start, pocket_end in domain_ranges:
         start, end = domain_cuts[domain_name]
-        target_seq = FULL_TARGET_SEQ[start-1:end-1] # residue indexes are 0-indexed in the string
+        target_seq = FULL_TARGET_SEQ[start-1:end] # residue indexes are 0-indexed in the string and inclusive of the end
+
+        # e.g. if pocket_start is 23, and start is 23, then pocket_start_rel is 1
+        pocket_start_rel = pocket_start - start + 1
+        pocket_end_rel = pocket_end - start + 1
 
         for binder_name, binder_seq in binders.items():
 
@@ -104,6 +109,6 @@ if __name__ == "__main__":
                 target_seq=target_seq,
                 binder_seq=binder_seq,
                 max_distance=MAX_DISTANCE,
-                contact_start=pocket_start,
-                contact_end=pocket_end,
+                contact_start=pocket_start_rel,
+                contact_end=pocket_end_rel,
             )
